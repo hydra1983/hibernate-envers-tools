@@ -2,6 +2,7 @@ package com.wds.tools.envers.cli.support;
 
 import io.airlift.command.Cli;
 import io.airlift.command.Cli.CliBuilder;
+import io.airlift.command.Help;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -28,12 +29,12 @@ public class CommandLineBuilder {
 	private static class ConcreteBuilder {
 		public static Cli<Runnable> build() {
 			Set<Class<? extends Runnable>> commands = new HashSet<Class<? extends Runnable>>();
-			commands.add(DefaultCommand.class);
+			commands.add(Help.class);
 			commands.add(VersionCommand.class);
 			commands.add(InstallCommand.class);
 
 			CliBuilder<Runnable> builder = Cli.<Runnable> builder(RunnerContext.current().getCommandLineName())
-					.withDescription("the stupid content tracker").withDefaultCommand(DefaultCommand.class)
+					.withDescription("the stupid content tracker").withDefaultCommand(Help.class)
 					.withCommands(commands);
 
 			return builder.build();
