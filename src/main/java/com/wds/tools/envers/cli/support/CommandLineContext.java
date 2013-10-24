@@ -8,22 +8,22 @@ import java.util.Properties;
 import com.google.common.io.Closeables;
 import com.google.common.io.Resources;
 
-public class RunnerContext {
-	private static final ThreadLocal<RunnerContext> current = new ThreadLocal<RunnerContext>();
+public class CommandLineContext {
+	private static final ThreadLocal<CommandLineContext> current = new ThreadLocal<CommandLineContext>();
 
-	public static void set() {
-		current.set(new RunnerContext());
+	public static void begin() {
+		current.set(new CommandLineContext());
 	}
 
-	public static void unset() {
+	public static void end() {
 		current.set(null);
 	}
 
-	public static RunnerContext current() {
+	public static CommandLineContext current() {
 		return current.get();
 	}
 
-	private RunnerContext() {
+	private CommandLineContext() {
 		initialize();
 	}
 

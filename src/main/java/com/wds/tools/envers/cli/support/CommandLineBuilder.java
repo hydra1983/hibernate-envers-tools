@@ -15,9 +15,9 @@ public class CommandLineBuilder {
 		return new CommandRunner() {
 			@Override
 			public void run() {
-				RunnerContext.set();
+				CommandLineContext.begin();
 				ConcreteBuilder.build().parse(args).run();
-				RunnerContext.unset();
+				CommandLineContext.end();
 			}
 		};
 	}
@@ -33,7 +33,7 @@ public class CommandLineBuilder {
 			commands.add(VersionCommand.class);
 			commands.add(InstallCommand.class);
 
-			CliBuilder<Runnable> builder = Cli.<Runnable> builder(RunnerContext.current().getCommandLineName())
+			CliBuilder<Runnable> builder = Cli.<Runnable> builder(CommandLineContext.current().getCommandLineName())
 					.withDescription("the stupid content tracker").withDefaultCommand(Help.class)
 					.withCommands(commands);
 

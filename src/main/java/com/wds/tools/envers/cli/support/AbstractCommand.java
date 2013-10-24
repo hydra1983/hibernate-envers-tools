@@ -16,7 +16,7 @@ public abstract class AbstractCommand implements Runnable {
 	public void run() {
 	}
 
-	protected RunnerContext getContext() {
-		return RunnerContext.current();
+	protected CommandLineContext getContext() {
+		return CommandLineContext.current();
 	}
 }
