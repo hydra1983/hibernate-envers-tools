@@ -25,7 +25,7 @@ public class CommandLineBuilder {
 		void run();
 	}
 
-	public static class ConcreteBuilder {
+	private static class ConcreteBuilder {
 		public static Cli<Runnable> build() {
 			Set<Class<? extends Runnable>> commands = new HashSet<Class<? extends Runnable>>();
 			commands.add(DefaultCommand.class);
