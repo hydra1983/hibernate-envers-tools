@@ -1,0 +1,48 @@
+#! /bin/sh
+
+if [ -n "${ENVERS_TOOLS_HOME+x}" ]; then
+  echo "Envers Tools Home: $ENVERS_TOOLS_HOME"
+else
+  echo "Envers Tools Home is not set."
+
+  ## resolve links - $0 may be a symlink
+  PRG="$0"
+  while [ -h "$PRG" ] ; do
+    ls=`ls -ld "$PRG"`
+    link=`expr "$ls" : '.*-> \(.*\)$'`
+    if expr "$link" : '/.*' > /dev/null; then
+    PRG="$link"
+    else
+    PRG=`dirname "$PRG"`"/$link"
+    fi
+  done
+
+
+  ENVERS_TOOLS_HOME=`dirname "$PRG"`
+
+  # make it fully qualified
+  ENVERS_TOOLS_HOME=`cd "$ENVERS_TOOLS_HOME" && pwd`
+  echo "Envers Tools Home: $ENVERS_TOOLS_HOME"
+fi
+
+ 
+# build classpath from all jars in lib
+if [ -f /usr/bin/cygpath ]; then
+  CP=.
+  for i in "$ENVERS_TOOLS_HOME"/lib/*.jar; do
+    i=`cygpath --windows "$i"`
+    CP="$CP;$i"
+  done
+else
+  CP=.
+  for i in "$ENVERS_TOOLS_HOME"/lib/*.jar; do
+    CP="$CP":"$i"
+  done
+fi
+
+# add any JVM options here
+JAVA_OPTS=
+
+java -cp "$CP" $JAVA_OPTS com.wds.tools.envers.cli.Main ${1+"$@"}
+
+
