@@ -19,6 +19,7 @@
 			<outputDirectory>/lib</outputDirectory>
 			<useProjectArtifact>true</useProjectArtifact>
 			<unpack>false</unpack>
+			<scope>compile</scope>
 		</dependencySet>
 	</dependencySets>
 </assembly>

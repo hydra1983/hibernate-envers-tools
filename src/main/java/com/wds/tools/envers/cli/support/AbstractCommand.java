@@ -18,7 +18,7 @@ public abstract class AbstractCommand implements Runnable {
 	@Option(type = OptionType.GLOBAL, name = { "-v", "--verbose" }, description = "Verbose mode")
 	public boolean verbose;
 
-	@Option(name = "--url", description = "url of target database", required = true)
+	@Option(name = "--url", description = "Url of target database", required = true)
 	public String url;
 
 	@Option(name = { "-D" }, description = "System parameters")

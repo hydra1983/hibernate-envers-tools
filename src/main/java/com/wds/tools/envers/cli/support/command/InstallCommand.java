@@ -6,22 +6,22 @@ import io.airlift.command.Option;
 
 import com.wds.tools.envers.cli.support.AbstractCommand;
 
-@Command(name = "install", description = "Track changes of target database using Hibenrate Envers")
+@Command(name = "install", description = "Enable change tracking for target database using Hibenrate Envers")
 public class InstallCommand extends AbstractCommand {
 
-	@Option(name = "--username", description = "username of target database")
+	@Option(name = "--username", description = "Username of target database")
 	public String username;
 
-	@Option(name = "--password", description = "password of target database")
+	@Option(name = "--password", description = "Password of target database")
 	public String password;
 
-	@Option(name = "--driver", description = "driver class of target database")
+	@Option(name = "--driver", description = "Driver class of target database")
 	public String driver;
 
-	@Option(name = "--basepackage", description = "base package to scan entities")
+	@Option(name = "--basepackage", description = "Base package to scan entities")
 	public String basepackage;
 
-	@Option(name = "--revent", description = "revision entity class")
+	@Option(name = "--revent", description = "Revision entity class")
 	public String revent;
 
 	@Override
