@@ -6,8 +6,37 @@
   <classpathentry kind="src" path="src/main/resources" excluding="**/*.java"/>
   <classpathentry kind="output" path="target/classes"/>
   <classpathentry kind="var" path="M2_REPO/javax/inject/javax.inject/1/javax.inject-1.jar" sourcepath="M2_REPO/javax/inject/javax.inject/1/javax.inject-1-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/javax/transaction/jta/1.1/jta-1.1.jar" sourcepath="M2_REPO/javax/transaction/jta/1.1/jta-1.1-sources.jar"/>
   <classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
   <classpathentry kind="var" path="M2_REPO/io/airlift/airline/0.6/airline-0.6.jar" sourcepath="M2_REPO/io/airlift/airline/0.6/airline-0.6-sources.jar"/>
-  <classpathentry kind="var" path="M2_REPO/com/google/guava/guava/12.0/guava-12.0.jar" sourcepath="M2_REPO/com/google/guava/guava/12.0/guava-12.0-sources.jar"/>
-  <classpathentry kind="var" path="M2_REPO/com/google/code/findbugs/jsr305/1.3.9/jsr305-1.3.9.jar"/>
+  <classpathentry kind="var" path="M2_REPO/org/hibernate/hibernate-envers/3.6.10.Final/hibernate-envers-3.6.10.Final.jar" sourcepath="M2_REPO/org/hibernate/hibernate-envers/3.6.10.Final/hibernate-envers-3.6.10.Final-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/org/hibernate/hibernate-core/3.6.10.Final/hibernate-core-3.6.10.Final.jar" sourcepath="M2_REPO/org/hibernate/hibernate-core/3.6.10.Final/hibernate-core-3.6.10.Final-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/antlr/antlr/2.7.6/antlr-2.7.6.jar" sourcepath="M2_REPO/antlr/antlr/2.7.6/antlr-2.7.6-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/commons-collections/commons-collections/3.1/commons-collections-3.1.jar" sourcepath="M2_REPO/commons-collections/commons-collections/3.1/commons-collections-3.1-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/dom4j/dom4j/1.6.1/dom4j-1.6.1.jar" sourcepath="M2_REPO/dom4j/dom4j/1.6.1/dom4j-1.6.1-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/org/hibernate/hibernate-commons-annotations/3.2.0.Final/hibernate-commons-annotations-3.2.0.Final.jar" sourcepath="M2_REPO/org/hibernate/hibernate-commons-annotations/3.2.0.Final/hibernate-commons-annotations-3.2.0.Final-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/org/slf4j/slf4j-api/1.6.1/slf4j-api-1.6.1.jar" sourcepath="M2_REPO/org/slf4j/slf4j-api/1.6.1/slf4j-api-1.6.1-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/org/hibernate/javax/persistence/hibernate-jpa-2.0-api/1.0.1.Final/hibernate-jpa-2.0-api-1.0.1.Final.jar" sourcepath="M2_REPO/org/hibernate/javax/persistence/hibernate-jpa-2.0-api/1.0.1.Final/hibernate-jpa-2.0-api-1.0.1.Final-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/org/hibernate/hibernate-entitymanager/3.6.10.Final/hibernate-entitymanager-3.6.10.Final.jar" sourcepath="M2_REPO/org/hibernate/hibernate-entitymanager/3.6.10.Final/hibernate-entitymanager-3.6.10.Final-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/cglib/cglib/2.2/cglib-2.2.jar" sourcepath="M2_REPO/cglib/cglib/2.2/cglib-2.2-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/asm/asm/3.1/asm-3.1.jar" sourcepath="M2_REPO/asm/asm/3.1/asm-3.1-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/javassist/javassist/3.12.0.GA/javassist-3.12.0.GA.jar" sourcepath="M2_REPO/javassist/javassist/3.12.0.GA/javassist-3.12.0.GA-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/com/google/guava/guava/15.0/guava-15.0.jar" sourcepath="M2_REPO/com/google/guava/guava/15.0/guava-15.0-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/net/sf/corn/corn-cps/1.1.1/corn-cps-1.1.1.jar" sourcepath="M2_REPO/net/sf/corn/corn-cps/1.1.1/corn-cps-1.1.1-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/com/javaetmoi/core/javaetmoi-hibernate-hydrate/1.2/javaetmoi-hibernate-hydrate-1.2.jar" sourcepath="M2_REPO/com/javaetmoi/core/javaetmoi-hibernate-hydrate/1.2/javaetmoi-hibernate-hydrate-1.2-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/ch/qos/logback/logback-classic/1.0.0/logback-classic-1.0.0.jar" sourcepath="M2_REPO/ch/qos/logback/logback-classic/1.0.0/logback-classic-1.0.0-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/ch/qos/logback/logback-core/1.0.0/logback-core-1.0.0.jar" sourcepath="M2_REPO/ch/qos/logback/logback-core/1.0.0/logback-core-1.0.0-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/com/wds/framework/sync/rig-sync-data-orm-hibernate-java/0.0.1-SNAPSHOT/rig-sync-data-orm-hibernate-java-0.0.1-SNAPSHOT.jar" sourcepath="M2_REPO/com/wds/framework/sync/rig-sync-data-orm-hibernate-java/0.0.1-SNAPSHOT/rig-sync-data-orm-hibernate-java-0.0.1-SNAPSHOT-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/com/wds/framework/sync/rig-sync-data-orm-core-java/0.0.1-SNAPSHOT/rig-sync-data-orm-core-java-0.0.1-SNAPSHOT.jar" sourcepath="M2_REPO/com/wds/framework/sync/rig-sync-data-orm-core-java/0.0.1-SNAPSHOT/rig-sync-data-orm-core-java-0.0.1-SNAPSHOT-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/com/wds/framework/sync/rig-sync-core-java/0.0.1-SNAPSHOT/rig-sync-core-java-0.0.1-SNAPSHOT.jar" sourcepath="M2_REPO/com/wds/framework/sync/rig-sync-core-java/0.0.1-SNAPSHOT/rig-sync-core-java-0.0.1-SNAPSHOT-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/com/wds/framework/sync/rig-sync-data-core-java/0.0.1-SNAPSHOT/rig-sync-data-core-java-0.0.1-SNAPSHOT.jar" sourcepath="M2_REPO/com/wds/framework/sync/rig-sync-data-core-java/0.0.1-SNAPSHOT/rig-sync-data-core-java-0.0.1-SNAPSHOT-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/com/cedarsoftware/json-io/2.2.31/json-io-2.2.31.jar" sourcepath="M2_REPO/com/cedarsoftware/json-io/2.2.31/json-io-2.2.31-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/joda-time/joda-time/2.2/joda-time-2.2.jar" sourcepath="M2_REPO/joda-time/joda-time/2.2/joda-time-2.2-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/com/wds/framework/rig-core-java/1.0.1-SNAPSHOT/rig-core-java-1.0.1-SNAPSHOT.jar" sourcepath="M2_REPO/com/wds/framework/rig-core-java/1.0.1-SNAPSHOT/rig-core-java-1.0.1-SNAPSHOT-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/org/spicefactory/cinnamon-reflect/1.1.0/cinnamon-reflect-1.1.0.jar" sourcepath="M2_REPO/org/spicefactory/cinnamon-reflect/1.1.0/cinnamon-reflect-1.1.0-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/commons-logging/commons-logging/1.1.1/commons-logging-1.1.1.jar" sourcepath="M2_REPO/commons-logging/commons-logging/1.1.1/commons-logging-1.1.1-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/org/apache/commons/commons-lang3/3.1/commons-lang3-3.1.jar" sourcepath="M2_REPO/org/apache/commons/commons-lang3/3.1/commons-lang3-3.1-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/com/wds/framework/sync/rig-sync-data-demo-lib/0.0.1-SNAPSHOT/rig-sync-data-demo-lib-0.0.1-SNAPSHOT.jar" sourcepath="M2_REPO/com/wds/framework/sync/rig-sync-data-demo-lib/0.0.1-SNAPSHOT/rig-sync-data-demo-lib-0.0.1-SNAPSHOT-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/com/wds/framework/sync/rig-sync-data-orm-hibernate-jpa-java/0.0.1-SNAPSHOT/rig-sync-data-orm-hibernate-jpa-java-0.0.1-SNAPSHOT.jar" sourcepath="M2_REPO/com/wds/framework/sync/rig-sync-data-orm-hibernate-jpa-java/0.0.1-SNAPSHOT/rig-sync-data-orm-hibernate-jpa-java-0.0.1-SNAPSHOT-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/com/h2database/h2/1.3.168/h2-1.3.168.jar" sourcepath="M2_REPO/com/h2database/h2/1.3.168/h2-1.3.168-sources.jar"/>
 </classpath>

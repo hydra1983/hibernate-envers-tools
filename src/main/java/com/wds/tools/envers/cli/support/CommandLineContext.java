@@ -1,12 +1,14 @@
 package com.wds.tools.envers.cli.support;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Properties;
 
-import com.google.common.io.Closeables;
+import com.google.common.io.Closer;
 import com.google.common.io.Resources;
+import com.wds.tools.envers.cli.utils.Closers;
+import com.wds.tools.envers.cli.utils.Closers.Void;
+import com.wds.tools.envers.cli.utils.PropertyUtils;
 
 public class CommandLineContext {
 	private static final ThreadLocal<CommandLineContext> current = new ThreadLocal<CommandLineContext>();
@@ -39,25 +41,24 @@ public class CommandLineContext {
 	}
 
 	private void initialize() {
-		Properties buildInfo = new Properties();
-
-		try {
-			URL props = Resources.getResource("buildinfo.properties");
-			InputStream propsStream = Resources.newInputStreamSupplier(props).getInput();
-			buildInfo.load(propsStream);
-			Closeables.closeQuietly(propsStream);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-
-		this.commandLineName = getProperty(buildInfo, "commandline", "envers");
-		this.version = getProperty(buildInfo, "version", "UNKNOWN");
+		Properties buildInfo = loadBuildinfo();
+		this.commandLineName = PropertyUtils.getProperty(buildInfo, "commandline", "envers");
+		this.version = PropertyUtils.getProperty(buildInfo, "version", "UNKNOWN");
 	}
 
-	private String getProperty(Properties props, String key, String defaultValue) {
-		if (props.containsKey(key)) {
-			return props.getProperty(key);
-		}
-		return defaultValue;
+	private Properties loadBuildinfo() {
+		final Properties buildInfo = new Properties();
+		final URL propsUrl = Resources.getResource("buildinfo.properties");
+
+		Closers.close(new Void() {
+			@Override
+			public void call(Closer closer) throws Throwable {
+				InputStream propsStream = Resources.newInputStreamSupplier(propsUrl).getInput();
+				closer.register(propsStream);
+				buildInfo.load(propsStream);
+			}
+		});
+
+		return buildInfo;
 	}
 }
