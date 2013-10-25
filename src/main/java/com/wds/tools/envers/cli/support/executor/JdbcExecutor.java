@@ -4,7 +4,6 @@ import static com.wds.tools.envers.cli.utils.PropertyUtils.putProperty;
 import static com.wds.tools.envers.cli.utils.ValidateUtils.shouldNotNull;
 
 import java.io.Serializable;
-import java.lang.reflect.Field;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
@@ -21,8 +20,6 @@ import javax.persistence.MappedSuperclass;
 
 import net.sf.corn.cps.CPScanner;
 import net.sf.corn.cps.ClassFilter;
-import net.sf.corn.cps.CombinedFilter;
-import net.sf.corn.cps.ResourceFilter;
 
 import org.hibernate.Criteria;
 import org.hibernate.EntityMode;
@@ -46,6 +43,7 @@ import com.wds.tools.envers.cli.utils.ClassUtils;
 import com.wds.tools.envers.cli.utils.ConnectionUrl;
 import com.wds.tools.envers.cli.utils.Consts;
 import com.wds.tools.envers.cli.utils.Exceptions;
+import com.wds.tools.envers.cli.utils.Reflections;
 import com.wds.tools.envers.cli.utils.StringUtils;
 
 public class JdbcExecutor implements Executor {
@@ -101,7 +99,7 @@ public class JdbcExecutor implements Executor {
 				String entityName = pc.getEntityName();
 				String auditEntityName = audCfg.getAuditEntCfg().getAuditEntityName(entityName);
 				String auditTableName = cfg.getNamingStrategy().classToTableName(auditEntityName);
-				tables.put(auditTableName, entity);
+				tables.put(auditTableName.toLowerCase(), entity);
 			}
 		}
 
@@ -141,29 +139,14 @@ public class JdbcExecutor implements Executor {
 				EntityPersister persister = source.getEntityPersister(null, entity);
 				Object[] state = persister.getPropertyValuesToInsert(entity, null, source);
 				ClassMetadata metadata = sessionFactory.getClassMetadata(persister.getEntityName());
-				Serializable id = (Serializable) getFieldValue(entity, metadata.getIdentifierPropertyName());
+				Serializable id = (Serializable) Reflections
+						.getFieldValue(entity, metadata.getIdentifierPropertyName());
 				PostInsertEvent event = new PostInsertEvent(entity, id, state, persister, source);
 				listener.onPostInsert(event);
 			}
 			tx.commit();
 			source.close();
 		}
-	}
-
-	private Object getFieldValue(Object instance, String fieldName) {
-		shouldNotNull(instance, "requires ''instance''");
-		Object value = null;
-		Class<?> javaType = instance.getClass();
-		try {
-			Field field = javaType.getDeclaredField(fieldName);
-			boolean accessible = field.isAccessible();
-			field.setAccessible(true);
-			value = field.get(instance);
-			field.setAccessible(accessible);
-		} catch (Exception e) {
-			throw Exceptions.runtime(e);
-		}
-		return value;
 	}
 
 	private List<Object> getEntityData(SessionFactory sessionFactory, List<Class<?>> initialized) {
@@ -190,16 +173,6 @@ public class JdbcExecutor implements Executor {
 	private Configuration configure() {
 		InstallCommand cmd = (InstallCommand) this.command;
 		ConnectionUrl url = new ConnectionUrl(cmd.url);
-
-		CombinedFilter entityOrMappedSuperclass = new CombinedFilter();
-		entityOrMappedSuperclass.appendFilter(new ClassFilter().annotation(Entity.class));
-		entityOrMappedSuperclass.appendFilter(new ClassFilter().annotation(MappedSuperclass.class));
-		entityOrMappedSuperclass.combineWithOr();
-
-		CombinedFilter packageAndAnnotation = new CombinedFilter();
-		packageAndAnnotation.appendFilter(new ResourceFilter().packageName(cmd.basepackage));
-		packageAndAnnotation.appendFilter(new ClassFilter().annotation(Entity.class));
-		packageAndAnnotation.combineWithAnd();
 
 		List<Class<?>> entities = CPScanner.scanClasses(new ClassFilter().packageName(cmd.basepackage)
 				.annotation(Entity.class).joinAnnotationsWithOr().annotation(MappedSuperclass.class));
