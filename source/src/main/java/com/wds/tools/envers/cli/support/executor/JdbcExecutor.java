@@ -173,7 +173,12 @@ public class JdbcExecutor implements Executor {
 	private Configuration configure() {
 		InstallCommand cmd = (InstallCommand) this.command;
 		ConnectionUrl url = new ConnectionUrl(cmd.url);
-
+		
+		if(url.isJdbc()){
+			shouldNotNull(cmd.revent, "RevisionEntity class should not be null : ''--revent'' is required");
+			shouldNotNull(cmd.basepackage, "Base package should not be null : ''--basepackage'' is required");
+		}
+		
 		List<Class<?>> entities = CPScanner.scanClasses(new ClassFilter().packageName(cmd.basepackage)
 				.annotation(Entity.class).joinAnnotationsWithOr().annotation(MappedSuperclass.class));
 		Class<?> revent = ClassUtils.forName(cmd.revent);

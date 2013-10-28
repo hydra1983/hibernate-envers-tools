@@ -1,6 +1,5 @@
 package com.wds.tools.envers.cli.support.command;
 
-import static com.wds.tools.envers.cli.utils.ValidateUtils.shouldNotNull;
 import io.airlift.command.Command;
 import io.airlift.command.Option;
 
@@ -17,6 +16,9 @@ public class InstallCommand extends AbstractCommand {
 
 	@Option(name = "--driver", description = "Driver class of target database")
 	public String driver;
+	
+	@Option(name = "--dialect", description = "Dialect class of target database")
+	public String dialect;
 
 	@Option(name = "--basepackage", description = "Base package to scan entities")
 	public String basepackage;
@@ -26,11 +28,6 @@ public class InstallCommand extends AbstractCommand {
 
 	@Override
 	public void run() {
-		validate();
 		getExecutor().install();
-	}
-
-	private void validate() {
-		shouldNotNull(this.revent, "RevisionEntity class should not be null : ''--revent'' is required");
 	}
 }
