@@ -2,18 +2,13 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 	<modelVersion>4.0.0</modelVersion>
 
-	<parent>
-		<groupId>com.wds.poms</groupId>
-		<artifactId>common</artifactId>
-		<version>1.0.1-SNAPSHOT</version>
-	</parent>
-
 	<groupId>com.wds.tools</groupId>
 	<artifactId>hibernate3-envers-tools</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<commandline>envers</commandline>
 	</properties>
 
