@@ -12,18 +12,18 @@
 		<file>
 			<source>${project.build.directory}/${project.build.finalName}.jar</source>
 			<destName>envers-tools.jar</destName>
-			<outputDirectory>/</outputDirectory>
+			<outputDirectory>/${project.artifactId}</outputDirectory>
 		</file>
 	</files>
 	<fileSets>
 		<fileSet>
 			<directory>${basedir}/src/main/dist</directory>
-			<outputDirectory>/</outputDirectory>
+			<outputDirectory>/${project.artifactId}</outputDirectory>
 		</fileSet>
 	</fileSets>	
 	<dependencySets>
 		<dependencySet>
-			<outputDirectory>/lib</outputDirectory>
+			<outputDirectory>/${project.artifactId}/lib</outputDirectory>
 			<useProjectArtifact>false</useProjectArtifact>
 			<unpack>false</unpack>
 			<scope>compile</scope>
