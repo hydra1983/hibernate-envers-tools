@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata>
+  <groupId>com.wds.tools</groupId>
+  <artifactId>hibernate-envers-tools</artifactId>
+  <versioning>
+    <versions>
+      <version>3.6.10-SNAPSHOT</version>
+    </versions>
+    <lastUpdated>20131028045306</lastUpdated>
+  </versioning>
+</metadata>
