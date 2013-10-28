@@ -37,7 +37,7 @@ public class CommandLineContext {
 	}
 
 	public String getVersion() {
-		return this.commandLineName + " v" + this.version;
+		return this.commandLineName + " " + this.version;
 	}
 
 	private void initialize() {
