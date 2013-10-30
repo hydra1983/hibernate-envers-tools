@@ -4,13 +4,8 @@ import static com.wds.tools.envers.cli.utils.PropertyUtils.putProperty;
 import static com.wds.tools.envers.cli.utils.ValidateUtils.shouldNotNull;
 
 import java.io.Serializable;
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -27,12 +22,15 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 import org.hibernate.cfg.Configuration;
+import org.hibernate.envers.AuditReader;
+import org.hibernate.envers.AuditReaderFactory;
 import org.hibernate.envers.Audited;
-import org.hibernate.envers.configuration.AuditConfiguration;
+import org.hibernate.envers.RevisionType;
 import org.hibernate.envers.event.AuditEventListener;
+import org.hibernate.envers.query.AuditEntity;
+import org.hibernate.envers.query.AuditQuery;
 import org.hibernate.event.EventSource;
 import org.hibernate.event.PostInsertEvent;
-import org.hibernate.mapping.PersistentClass;
 import org.hibernate.metadata.ClassMetadata;
 import org.hibernate.persister.entity.EntityPersister;
 
@@ -41,8 +39,8 @@ import com.wds.tools.envers.cli.support.Executor;
 import com.wds.tools.envers.cli.support.command.InstallCommand;
 import com.wds.tools.envers.cli.utils.ClassUtils;
 import com.wds.tools.envers.cli.utils.ConnectionUrl;
+import com.wds.tools.envers.cli.utils.Console;
 import com.wds.tools.envers.cli.utils.Consts;
-import com.wds.tools.envers.cli.utils.Exceptions;
 import com.wds.tools.envers.cli.utils.Reflections;
 import com.wds.tools.envers.cli.utils.StringUtils;
 
@@ -66,72 +64,25 @@ public class JdbcExecutor implements Executor {
 	private final Runnable command;
 	private final Properties props;
 
+	private InstallCommand install;
+
+	private boolean verbose;
+
 	@Override
 	public void install() {
-		List<Class<?>> initialized = getInitializedEntities();
-		initializeRevisionInfo(initialized);
+		this.install = (InstallCommand) command;
+		this.verbose = this.install.verbose;
+		initializeRevisionInfo();
 	}
 
-	private List<Class<?>> getInitializedEntities() {
-		List<Class<?>> initialized = new ArrayList<Class<?>>();
-		Map<String, Class<?>> targetTables = getTargetTables();
-		List<String> exsistingTables = getExistingTables();
-		for (String targetTable : targetTables.keySet()) {
-			if (exsistingTables.contains(targetTable)) {
-				initialized.add(targetTables.get(targetTable));
-			}
-		}
-		return initialized;
-	}
-
-	private Map<String, Class<?>> getTargetTables() {
-		Map<String, Class<?>> tables = new HashMap<String, Class<?>>();
-
-		Configuration cfg = configure();
-		AuditConfiguration audCfg = new AuditConfiguration(cfg);
-		cfg.buildMappings();
-
-		Iterator<PersistentClass> pci = cfg.getClassMappings();
-		while (pci.hasNext()) {
-			PersistentClass pc = pci.next();
-			Class<?> entity = pc.getMappedClass();
-			if (entity.isAnnotationPresent(Audited.class)) {
-				String entityName = pc.getEntityName();
-				String auditEntityName = audCfg.getAuditEntCfg().getAuditEntityName(entityName);
-				String auditTableName = cfg.getNamingStrategy().classToTableName(auditEntityName);
-				tables.put(auditTableName.toLowerCase(), entity);
-			}
-		}
-
-		return tables;
-	}
-
-	private List<String> getExistingTables() {
-		List<String> tables = new ArrayList<String>();
-		InstallCommand cmd = (InstallCommand) this.command;
-		try {
-			Connection con = DriverManager.getConnection(cmd.url, cmd.username, cmd.password);
-			DatabaseMetaData meta = con.getMetaData();
-			ResultSet res = meta.getTables(null, null, null, new String[] { "TABLE" });
-			while (res.next()) {
-				tables.add(res.getString("TABLE_NAME").toLowerCase());
-			}
-			res.close();
-			con.close();
-		} catch (Exception e) {
-			throw Exceptions.runtime(e);
-		}
-		return tables;
-	}
-
-	private void initializeRevisionInfo(List<Class<?>> initialized) {
+	private void initializeRevisionInfo() {
 		Configuration cfg = configure2();
 		SessionFactory sessionFactory = cfg.buildSessionFactory();
 
 		AuditEventListener listener = new AuditEventListener();
 		listener.initialize(cfg);
 
-		List<Object> entities = getEntityData(sessionFactory, initialized);
+		List<Object> entities = getEntityData(sessionFactory);
 		if (entities != null && entities.size() > 0) {
 			EventSource source = (EventSource) sessionFactory.openSession();
 			Transaction tx = source.beginTransaction();
@@ -143,27 +94,46 @@ public class JdbcExecutor implements Executor {
 						.getFieldValue(entity, metadata.getIdentifierPropertyName());
 				PostInsertEvent event = new PostInsertEvent(entity, id, state, persister, source);
 				listener.onPostInsert(event);
+				verbose("Auditing entity ''{0}'' with id ''{1}''", entity.getClass().getName(), id);
 			}
+			verbose("");
 			tx.commit();
 			source.close();
 		}
 	}
 
-	private List<Object> getEntityData(SessionFactory sessionFactory, List<Class<?>> initialized) {
+	private List<Object> getEntityData(SessionFactory sessionFactory) {
 		List<Object> data = new ArrayList<Object>();
 		Session session = sessionFactory.openSession();
+		AuditReader reader = AuditReaderFactory.get(session);
 		Map<String, ClassMetadata> allMetadata = sessionFactory.getAllClassMetadata();
 		for (String key : allMetadata.keySet()) {
 			ClassMetadata metadata = allMetadata.get(key);
 			Class<?> javaType = metadata.getMappedClass(EntityMode.POJO);
-			if (!initialized.contains(javaType) && javaType.isAnnotationPresent(Audited.class)) {
+			if (javaType.isAnnotationPresent(Audited.class)) {
+				verbose("Retrieving data for entity ''{0}''", javaType.getName());
 				Criteria criteria = session.createCriteria(metadata.getEntityName());
 				@SuppressWarnings("rawtypes")
-				List list = criteria.list();
-				for (Object entity : list) {
-					entity = LazyLoadingUtil.deepHydrate(session, entity);
-					data.add(entity);
+				List entities = criteria.list();
+				for (Object entity : entities) {
+					String idName = metadata.getIdentifierPropertyName();
+					Serializable id = (Serializable) Reflections.getFieldValue(entity, idName);
+					AuditQuery query = reader.createQuery().forRevisionsOfEntity(javaType, false, true);
+					query.addOrder(AuditEntity.revisionNumber().asc());
+					query.add(AuditEntity.revisionType().eq(RevisionType.ADD));
+					query.add(AuditEntity.id().eq(id));
+					query.setMaxResults(1);
+					@SuppressWarnings("rawtypes")
+					List list = query.getResultList();
+					if (list != null && list.size() == 1) {
+						verbose("Entity ''{0}'' with id ''{1}'' already audited", javaType.getName(), id);
+					} else {
+						verbose("Entity ''{0}'' with id ''{1}'' will be audited", javaType.getName(), id);
+						entity = LazyLoadingUtil.deepHydrate(session, entity);
+						data.add(entity);
+					}
 				}
+				verbose("");
 			}
 		}
 		session.close();
@@ -171,17 +141,16 @@ public class JdbcExecutor implements Executor {
 	}
 
 	private Configuration configure() {
-		InstallCommand cmd = (InstallCommand) this.command;
-		ConnectionUrl url = new ConnectionUrl(cmd.url);
-		
-		if(url.isJdbc()){
-			shouldNotNull(cmd.revent, "RevisionEntity class should not be null : ''--revent'' is required");
-			shouldNotNull(cmd.basepackage, "Base package should not be null : ''--basepackage'' is required");
+		ConnectionUrl url = new ConnectionUrl(this.install.url);
+
+		if (url.isJdbc()) {
+			shouldNotNull(this.install.revent, "RevisionEntity class should not be null : ''--revent'' is required");
+			shouldNotNull(this.install.basepackage, "Base package should not be null : ''--basepackage'' is required");
 		}
-		
-		List<Class<?>> entities = CPScanner.scanClasses(new ClassFilter().packageName(cmd.basepackage)
+
+		List<Class<?>> entities = CPScanner.scanClasses(new ClassFilter().packageName(this.install.basepackage)
 				.annotation(Entity.class).joinAnnotationsWithOr().annotation(MappedSuperclass.class));
-		Class<?> revent = ClassUtils.forName(cmd.revent);
+		Class<?> revent = ClassUtils.forName(this.install.revent);
 		entities.add(revent);
 
 		// resolve properties
@@ -191,9 +160,9 @@ public class JdbcExecutor implements Executor {
 				StringUtils.replace("Cannot find dialect for ''{0}''", url.getDatabaseType()));
 
 		// hibernate
-		putProperty(this.props, Consts.HIBERNATE_CONNECTION_URL, cmd.url);
-		putProperty(this.props, "hibernate.connection.username", cmd.username);
-		putProperty(this.props, "hibernate.connection.password", cmd.password);
+		putProperty(this.props, Consts.HIBERNATE_CONNECTION_URL, this.install.url);
+		putProperty(this.props, "hibernate.connection.username", this.install.username);
+		putProperty(this.props, "hibernate.connection.password", this.install.password);
 		putProperty(this.props, "hibernate.connection.driver_class", driver);
 		putProperty(this.props, "hibernate.dialect", dialect);
 		putProperty(this.props, "hibernate.hbm2ddl.auto", "update");
@@ -202,13 +171,19 @@ public class JdbcExecutor implements Executor {
 		// envers
 		putProperty(this.props, "org.hibernate.envers.audit_strategy",
 				"org.hibernate.envers.strategy.ValidityAuditStrategy");
-
+		verbose(this.props);
+		verbose("");
 		// create configuration
 		Configuration cfg = new Configuration();
 		cfg.addProperties(this.props);
+		verbose("Audited Entities : ");
 		for (Class<?> entity : entities) {
+			if (entity.isAnnotationPresent(Audited.class)) {
+				verbose(entity.getName());
+			}
 			cfg.addAnnotatedClass(entity);
 		}
+		verbose("");
 		return cfg;
 	}
 
@@ -221,5 +196,18 @@ public class JdbcExecutor implements Executor {
 		cfg.setListener("pre-collection-remove", new AuditEventListener());
 		cfg.setListener("post-collection-recreate", new AuditEventListener());
 		return cfg;
+	}
+
+	private void verbose(String message, Object... args) {
+		if (this.verbose) {
+			Console.info(message, args);
+		}
+	}
+
+	private void verbose(Properties props) {
+		verbose("Configration properties :");
+		for (String key : props.stringPropertyNames()) {
+			verbose("{0} = {1}", key, props.getProperty(key));
+		}
 	}
 }
