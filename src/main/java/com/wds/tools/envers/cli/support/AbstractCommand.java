@@ -21,28 +21,18 @@ public abstract class AbstractCommand implements Runnable {
 	@Option(name = "--url", description = "Url of target database", required = true)
 	public String url;
 
+	@Option(name = "--includeSystemClasspath", description = "Should find classes in system classpath")
+	public Boolean includeSystemClasspath = true;
+
+	@Option(name = "--classpath", description = "Classpath to find classes")
+	public String classpath;
+
 	@Option(name = { "-D" }, description = "System parameters")
 	public List<String> parameters;
 
 	@Override
-	public void run() {
-	}
-
-	protected CommandLineContext getContext() {
-		return CommandLineContext.current();
-	}
-
-	protected Properties loadProps() {
-		Properties props = new Properties();
-		if (this.parameters != null && this.parameters.size() > 0) {
-			String propsString = Joiner.on(Consts.LINE_SEPERATOR).join(this.parameters);
-			try {
-				props.load(CharStreams.newReaderSupplier(propsString).getInput());
-			} catch (Exception e) {
-				throw Exceptions.runtime(e);
-			}
-		}
-		return props;
+	public final void run() {
+		doRun();
 	}
 
 	protected Executor getExecutor() {
@@ -57,4 +47,19 @@ public abstract class AbstractCommand implements Runnable {
 		}
 		return executor;
 	}
+
+	private Properties loadProps() {
+		Properties props = new Properties();
+		if (this.parameters != null && this.parameters.size() > 0) {
+			String propsString = Joiner.on(Consts.LINE_SEPERATOR).join(this.parameters);
+			try {
+				props.load(CharStreams.newReaderSupplier(propsString).getInput());
+			} catch (Exception e) {
+				throw Exceptions.runtime(e);
+			}
+		}
+		return props;
+	}
+
+	abstract protected void doRun();
 }

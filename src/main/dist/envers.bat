@@ -7,7 +7,9 @@ rem %~dp0 is expanded pathname of the current script under NT
 set ENVERS_TOOLS_HOME="%~dp0"
 
 set CP=.
+for /R %ENVERS_TOOLS_HOME%\patches %%f in (*.jar) do set CP=!CP!;%%f
 for /R %ENVERS_TOOLS_HOME% %%f in (envers*.jar) do set CP=!CP!;%%f
+for /R %ENVERS_TOOLS_HOME%\dependencies %%f in (*.jar) do set CP=!CP!;%%f
 for /R %ENVERS_TOOLS_HOME%\lib %%f in (*.jar) do set CP=!CP!;%%f
 
 rem get command line args into a variable

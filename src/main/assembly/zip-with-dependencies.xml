@@ -7,7 +7,7 @@
 	<formats>
 		<format>zip</format>
 	</formats>
-	<includeBaseDirectory>false</includeBaseDirectory>
+	<includeBaseDirectory>false</includeBaseDirectory>	
 	<files>
 		<file>
 			<source>${project.build.directory}/${project.build.finalName}.jar</source>
@@ -23,7 +23,7 @@
 	</fileSets>	
 	<dependencySets>
 		<dependencySet>
-			<outputDirectory>/${project.artifactId}/lib</outputDirectory>
+			<outputDirectory>/${project.artifactId}/dependencies</outputDirectory>
 			<useProjectArtifact>false</useProjectArtifact>
 			<unpack>false</unpack>
 			<scope>compile</scope>

@@ -29,7 +29,15 @@ fi
 # build classpath from all jars in lib
 if [ -f /usr/bin/cygpath ]; then
   CP=.
-   for i in "$ENVERS_TOOLS_HOME"/envers*.jar; do
+  for i in "$ENVERS_TOOLS_HOME"/patches/*.jar; do
+    i=`cygpath --windows "$i"`
+    CP="$CP;$i"
+  done
+  for i in "$ENVERS_TOOLS_HOME"/envers*.jar; do
+    i=`cygpath --windows "$i"`
+    CP="$CP;$i"
+  done
+  for i in "$ENVERS_TOOLS_HOME"/dependencies/*.jar; do
     i=`cygpath --windows "$i"`
     CP="$CP;$i"
   done
@@ -39,7 +47,13 @@ if [ -f /usr/bin/cygpath ]; then
   done
 else
   CP=.
+  for i in "$ENVERS_TOOLS_HOME"/patches/*.jar; do
+    CP="$CP":"$i"
+  done
   for i in "$ENVERS_TOOLS_HOME"/envers*.jar; do
+    CP="$CP":"$i"
+  done
+  for i in "$ENVERS_TOOLS_HOME"/dependencies/*.jar; do
     CP="$CP":"$i"
   done
   for i in "$ENVERS_TOOLS_HOME"/lib/*.jar; do

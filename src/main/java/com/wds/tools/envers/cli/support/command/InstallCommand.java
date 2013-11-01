@@ -16,7 +16,7 @@ public class InstallCommand extends AbstractCommand {
 
 	@Option(name = "--driver", description = "Driver class of target database")
 	public String driver;
-	
+
 	@Option(name = "--dialect", description = "Dialect class of target database")
 	public String dialect;
 
@@ -27,7 +27,7 @@ public class InstallCommand extends AbstractCommand {
 	public String revent;
 
 	@Override
-	public void run() {
+	protected void doRun() {
 		getExecutor().install();
 	}
 }
