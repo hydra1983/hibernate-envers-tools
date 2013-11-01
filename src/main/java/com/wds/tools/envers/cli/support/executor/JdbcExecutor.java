@@ -5,7 +5,6 @@ import static com.wds.tools.envers.cli.utils.ValidateUtils.shouldNotNull;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -34,6 +33,7 @@ import org.hibernate.event.PostInsertEvent;
 import org.hibernate.metadata.ClassMetadata;
 import org.hibernate.persister.entity.EntityPersister;
 
+import com.google.common.io.Resources;
 import com.javaetmoi.core.persistence.hibernate.LazyLoadingUtil;
 import com.wds.tools.envers.cli.support.Executor;
 import com.wds.tools.envers.cli.support.command.InstallCommand;
@@ -41,19 +41,16 @@ import com.wds.tools.envers.cli.utils.ClassUtils;
 import com.wds.tools.envers.cli.utils.ConnectionUrl;
 import com.wds.tools.envers.cli.utils.Console;
 import com.wds.tools.envers.cli.utils.Consts;
+import com.wds.tools.envers.cli.utils.PropertyUtils;
 import com.wds.tools.envers.cli.utils.Reflections;
 import com.wds.tools.envers.cli.utils.StringUtils;
 
 public class JdbcExecutor implements Executor {
-	private static Map<String, String> dbDriverMap;
-	private static Map<String, String> dbDialectMap;
-
+	private static Properties drivers;
+	private static Properties dialects;
 	{
-		dbDriverMap = new HashMap<String, String>();
-		dbDriverMap.put("h2", "org.h2.Driver");
-
-		dbDialectMap = new HashMap<String, String>();
-		dbDialectMap.put("h2", "org.hibernate.dialect.H2Dialect");
+		drivers = PropertyUtils.loadProperties(Resources.getResource("drivers.properties"));
+		dialects = PropertyUtils.loadProperties(Resources.getResource("dialects.properties"));
 	}
 
 	public JdbcExecutor(Runnable command, Properties props) {
@@ -143,22 +140,24 @@ public class JdbcExecutor implements Executor {
 	private Configuration configure() {
 		ConnectionUrl url = new ConnectionUrl(this.install.url);
 
-		if (url.isJdbc()) {			
+		if (url.isJdbc()) {
 			shouldNotNull(this.install.basepackage, "Base package should not be null : ''--basepackage'' is required");
 		}
 
 		List<Class<?>> entities = CPScanner.scanClasses(new ClassFilter().packageName(this.install.basepackage)
 				.annotation(Entity.class).joinAnnotationsWithOr().annotation(MappedSuperclass.class));
-		
-		if(this.install.revent != null && this.install.revent != ""){
+
+		if (this.install.revent != null && this.install.revent != "") {
 			Class<?> revent = ClassUtils.forName(this.install.revent);
 			entities.add(revent);
 		}
 
 		// resolve properties
-		String driver = (String) shouldNotNull(dbDriverMap.get(url.getDatabaseType()),
+		String driver = (String) shouldNotNull(
+				PropertyUtils.getProperty(drivers, url.getDatabaseType(), this.install.driver),
 				StringUtils.replace("Cannot find dirver for ''{0}''", url.getDatabaseType()));
-		String dialect = (String) shouldNotNull(dbDialectMap.get(url.getDatabaseType()),
+		String dialect = (String) shouldNotNull(
+				PropertyUtils.getProperty(dialects, url.getDatabaseType(), this.install.dialect),
 				StringUtils.replace("Cannot find dialect for ''{0}''", url.getDatabaseType()));
 
 		// hibernate
