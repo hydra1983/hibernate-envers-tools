@@ -2,8 +2,8 @@
 
 ## Installation :
 
-1. Download [latest snapshot version](https://github.com/hydra1983/hibernate-envers-tools/tree/mvn-repo/snapshots/com/wds/tools/hibernate-envers-tools/3.6.10-SNAPSHOT)(zip)
-2. Unzip and add it to system path
+1. Download [latest snapshot version](https://github.com/hydra1983/hibernate-envers-tools/tree/mvn-repo/snapshots/com/wds/tools/hibernate-envers-tools/3.6.10-SNAPSHOT) (zip)
+2. Unzip the downloaded file to *{envers_path}* and add the *{envers_path}* to system path
 
 ## Usage :
 
@@ -20,11 +20,13 @@ See 'envers help <command>' for more information on a specific command.
 ```
 
 ## Example (win):
+1. add required *h2.jar* to *{envers_path}/lib*
+2. run command as below:
 
 ```shell
 envers install -v ^
-  --url=jdbc:h2:tmp/example
-  --username=sa
-  --password=
-  --basepackage=com.wds.demo.sync.domain
+  --url=jdbc:h2:tmp/example ^
+  --username=sa ^
+  --password= ^
+  --basepackage=com.wds.demo.sync.domain ^
 ```
