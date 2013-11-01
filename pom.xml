@@ -98,6 +98,7 @@ version=${project.version}
 						</goals>
 						<phase>package</phase>
 						<configuration>
+							<appendAssemblyId>true</appendAssemblyId>
 							<descriptors>
 								<descriptor>src/main/assembly/zip-with-dependencies.xml</descriptor>
 							</descriptors>
@@ -177,12 +178,12 @@ version=${project.version}
 		<repository>
 			<id>internal-releases</id>
 			<name>Internal Releases Repository</name>
-			<url>file://${project.basedir}/../repo/releases</url>			
+			<url>file://${project.basedir}/../repo/releases</url>
 		</repository>
 		<snapshotRepository>
 			<id>internal-snapshots</id>
 			<name>Internal Snapshots Repository</name>
-			<url>file://${project.basedir}/../repo/snapshots</url>	
+			<url>file://${project.basedir}/../repo/snapshots</url>
 		</snapshotRepository>
 	</distributionManagement>
 </project>
