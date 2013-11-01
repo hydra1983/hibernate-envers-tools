@@ -143,15 +143,17 @@ public class JdbcExecutor implements Executor {
 	private Configuration configure() {
 		ConnectionUrl url = new ConnectionUrl(this.install.url);
 
-		if (url.isJdbc()) {
-			shouldNotNull(this.install.revent, "RevisionEntity class should not be null : ''--revent'' is required");
+		if (url.isJdbc()) {			
 			shouldNotNull(this.install.basepackage, "Base package should not be null : ''--basepackage'' is required");
 		}
 
 		List<Class<?>> entities = CPScanner.scanClasses(new ClassFilter().packageName(this.install.basepackage)
 				.annotation(Entity.class).joinAnnotationsWithOr().annotation(MappedSuperclass.class));
-		Class<?> revent = ClassUtils.forName(this.install.revent);
-		entities.add(revent);
+		
+		if(this.install.revent != null && this.install.revent != ""){
+			Class<?> revent = ClassUtils.forName(this.install.revent);
+			entities.add(revent);
+		}
 
 		// resolve properties
 		String driver = (String) shouldNotNull(dbDriverMap.get(url.getDatabaseType()),
