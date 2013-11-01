@@ -24,9 +24,9 @@ See 'envers help <command>' for more information on a specific command.
 2. run command as below:
 
 ```shell
-envers install -v ^
-  --url=jdbc:h2:tmp/example ^
-  --username=sa ^
-  --password= ^
-  --basepackage=com.wds.demo.sync.domain
+envers  -v install ^
+        --url=jdbc:h2:tmp/example ^
+        --username=sa ^
+        --password= ^
+        --basepackage=com.wds.demo.sync.domain
 ```
