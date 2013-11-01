@@ -2,9 +2,8 @@
 
 ## Installation :
 
-1.Download lasted binary snaphot version from [maven repository](https://github.com/hydra1983/hibernate-envers-tools/tree/mvn-repo/snapshots/com/wds/tools/hibernate-envers-tools/3.6.10-SNAPSHOT)
-
-2.Unzip and add the it to system path
+1. Download lasted binary snaphot version from [maven repository](https://github.com/hydra1983/hibernate-envers-tools/tree/mvn-repo/snapshots/com/wds/tools/hibernate-envers-tools/3.6.10-SNAPSHOT)
+2. Unzip and add the it to system path
 
 ## Usage :
 
