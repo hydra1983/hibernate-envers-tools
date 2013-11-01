@@ -19,6 +19,46 @@ See 'envers help <command>' for more information on a specific command.
 
 ```
 
+```shell
+NAME
+        envers install - Enable change tracking for target database using
+        Hibenrate Envers
+
+SYNOPSIS
+        envers [(-v | --verbose)] install [--basepackage <basepackage>]
+                [-D <parameters>...] [--dialect <dialect>] [--driver <driver>]
+                [--password <password>] [--revent <revent>] --url <url>
+                [--username <username>]
+
+OPTIONS
+        --basepackage <basepackage>
+            Base package to scan entities
+
+        -D <parameters>
+            System parameters
+
+        --dialect <dialect>
+            Dialect class of target database
+
+        --driver <driver>
+            Driver class of target database
+
+        --password <password>
+            Password of target database
+
+        --revent <revent>
+            Revision entity class
+
+        --url <url>
+            Url of target database
+
+        --username <username>
+            Username of target database
+
+        -v, --verbose
+            Verbose mode
+```
+
 ## Example (win):
 1. add required libraries, such as "h2.jar", to {root}/hibernate-envers-tools/lib
 2. run command as below:
