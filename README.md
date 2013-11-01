@@ -28,5 +28,5 @@ envers install -v ^
   --url=jdbc:h2:tmp/example ^
   --username=sa ^
   --password= ^
-  --basepackage=com.wds.demo.sync.domain ^
+  --basepackage=com.wds.demo.sync.domain
 ```
