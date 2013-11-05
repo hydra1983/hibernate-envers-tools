@@ -65,12 +65,13 @@ public class JdbcExecutor implements Executor {
 	private final Properties props;
 
 	@Override
-	public void install() {
+	public void install() {	
 		Configuration cfg = buildConfiguration();
 		SessionFactory sessionFactory = cfg.buildSessionFactory();
 		List<Object> entities = getEntityData(sessionFactory);
 
 		if (entities != null && entities.size() > 0) {
+			verbose("Auditing entities...");
 			AuditEventListener listener = EnversUtils.getAuditEventListener(sessionFactory);
 			EventSource source = (EventSource) sessionFactory.openSession();
 			Transaction tx = source.beginTransaction();
@@ -82,9 +83,8 @@ public class JdbcExecutor implements Executor {
 						.getFieldValue(entity, metadata.getIdentifierPropertyName());
 				PostInsertEvent event = new PostInsertEvent(entity, id, state, persister, source);
 				listener.onPostInsert(event);
-				verbose("Auditing entity ''{0}'' with id ''{1}''", entity.getClass().getName(), id);
+				verbose(1, "Auditing entity ''{0}'' with id ''{1}''", entity.getClass().getName(), id);
 			}
-			verbose("");
 			tx.commit();
 			source.close();
 		}
@@ -95,11 +95,11 @@ public class JdbcExecutor implements Executor {
 		Session session = sessionFactory.openSession();
 		AuditReader reader = AuditReaderFactory.get(session);
 		Map<String, ClassMetadata> allMetadata = sessionFactory.getAllClassMetadata();
+		verbose("Retrieving data...");
 		for (String key : allMetadata.keySet()) {
 			ClassMetadata metadata = allMetadata.get(key);
 			Class<?> javaType = metadata.getMappedClass(EntityMode.POJO);
 			if (javaType.isAnnotationPresent(Audited.class)) {
-				verbose("Retrieving data for entity ''{0}''", javaType.getName());
 				Criteria criteria = session.createCriteria(metadata.getEntityName());
 				@SuppressWarnings("rawtypes")
 				List entities = criteria.list();
@@ -114,14 +114,13 @@ public class JdbcExecutor implements Executor {
 					@SuppressWarnings("rawtypes")
 					List list = query.getResultList();
 					if (list != null && list.size() == 1) {
-						verbose("Entity ''{0}'' with id ''{1}'' already audited", javaType.getName(), id);
+						verbose(1, "Entity ''{0}'' with id ''{1}'' already Audited", javaType.getName(), id);
 					} else {
-						verbose("Entity ''{0}'' with id ''{1}'' will be audited", javaType.getName(), id);
+						verbose(1, "Entity ''{0}'' with id ''{1}'' will be audited", javaType.getName(), id);
 						entity = LazyLoadingUtil.deepHydrate(session, entity);
 						data.add(entity);
 					}
 				}
-				verbose("");
 			}
 		}
 		session.close();
@@ -162,27 +161,32 @@ public class JdbcExecutor implements Executor {
 		// envers props
 		putProperty(this.props, "org.hibernate.envers.audit_strategy",
 				"org.hibernate.envers.strategy.ValidityAuditStrategy");
-		verbose("");
 
 		// create configuration
 		Configuration cfg = new Configuration();
 
 		// properties
 		verbose("Configration properties :");
-		for (String key : props.stringPropertyNames()) {
-			verbose("{0} = {1}", key, props.getProperty(key));
-		}
 		cfg.addProperties(this.props);
+		for (String key : props.stringPropertyNames()) {
+			verbose(1, "{0} = {1}", key, props.getProperty(key));
+		}		
+
+		// naming strategy
+		String namingStrategyClassName = getProperty(this.props, "hibernate.ejb.naming_strategy",
+				"org.hibernate.cfg.ImprovedNamingStrategy");
+		cfg.setNamingStrategy((NamingStrategy) ClassUtils.newInstance(namingStrategyClassName));
+		
+		verbose("Naming Strategy : {0}", namingStrategyClassName);
 
 		// entities
 		verbose("Audited Entities : ");
 		for (Class<?> entity : entities) {
 			if (entity.isAnnotationPresent(Audited.class)) {
-				verbose(entity.getName());
+				verbose(1, entity.getName());
 			}
 			cfg.addAnnotatedClass(entity);
-		}
-		verbose("");
+		}		
 
 		// listeners
 		cfg.setListener("post-insert", new AuditEventListener());
@@ -192,11 +196,6 @@ public class JdbcExecutor implements Executor {
 		cfg.setListener("pre-collection-remove", new AuditEventListener());
 		cfg.setListener("post-collection-recreate", new AuditEventListener());
 
-		// naming strategy
-		String namingStrategyClassName = getProperty(this.props, "hibernate.ejb.naming_strategy",
-				"org.hibernate.cfg.ImprovedNamingStrategy");
-		cfg.setNamingStrategy((NamingStrategy) ClassUtils.newInstance(namingStrategyClassName));
-
 		return cfg;
 	}
 
@@ -204,6 +203,15 @@ public class JdbcExecutor implements Executor {
 		if (this.args.verbose) {
 			Console.info(message, args);
 		}
+	}
+
+	private void verbose(int level, String message, Object... args) {
+		String pad = "    ";
+		String totalPad = "";
+		for (int i = 0; i < level; i++) {
+			totalPad += pad;
+		}
+		verbose(totalPad + message, args);
 	}
 
 	private static class CommandArgs {

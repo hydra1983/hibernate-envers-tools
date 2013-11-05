@@ -24,6 +24,4 @@
   <classpathentry kind="var" path="M2_REPO/javassist/javassist/3.12.0.GA/javassist-3.12.0.GA.jar" sourcepath="M2_REPO/javassist/javassist/3.12.0.GA/javassist-3.12.0.GA-sources.jar"/>
   <classpathentry kind="var" path="M2_REPO/net/sf/corn/corn-cps/1.1.1/corn-cps-1.1.1.jar" sourcepath="M2_REPO/net/sf/corn/corn-cps/1.1.1/corn-cps-1.1.1-sources.jar"/>
   <classpathentry kind="var" path="M2_REPO/com/javaetmoi/core/javaetmoi-hibernate-hydrate/1.2/javaetmoi-hibernate-hydrate-1.2.jar" sourcepath="M2_REPO/com/javaetmoi/core/javaetmoi-hibernate-hydrate/1.2/javaetmoi-hibernate-hydrate-1.2-sources.jar"/>
-  <classpathentry kind="var" path="M2_REPO/ch/qos/logback/logback-classic/1.0.0/logback-classic-1.0.0.jar" sourcepath="M2_REPO/ch/qos/logback/logback-classic/1.0.0/logback-classic-1.0.0-sources.jar"/>
-  <classpathentry kind="var" path="M2_REPO/ch/qos/logback/logback-core/1.0.0/logback-core-1.0.0.jar" sourcepath="M2_REPO/ch/qos/logback/logback-core/1.0.0/logback-core-1.0.0-sources.jar"/>
 </classpath>
