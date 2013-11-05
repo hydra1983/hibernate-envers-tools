@@ -21,12 +21,6 @@ public abstract class AbstractCommand implements Runnable {
 	@Option(name = "--url", description = "Url of target database", required = true)
 	public String url;
 
-	@Option(name = "--includeSystemClasspath", description = "Should find classes in system classpath")
-	public Boolean includeSystemClasspath = true;
-
-	@Option(name = "--classpath", description = "Classpath to find classes")
-	public String classpath;
-
 	@Option(name = { "-D" }, description = "System parameters")
 	public List<String> parameters;
 

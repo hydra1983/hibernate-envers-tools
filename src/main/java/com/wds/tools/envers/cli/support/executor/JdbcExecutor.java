@@ -1,5 +1,6 @@
 package com.wds.tools.envers.cli.support.executor;
 
+import static com.wds.tools.envers.cli.utils.PropertyUtils.getProperty;
 import static com.wds.tools.envers.cli.utils.PropertyUtils.putProperty;
 import static com.wds.tools.envers.cli.utils.ValidateUtils.shouldNotNull;
 
@@ -21,6 +22,7 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 import org.hibernate.cfg.Configuration;
+import org.hibernate.cfg.NamingStrategy;
 import org.hibernate.envers.AuditReader;
 import org.hibernate.envers.AuditReaderFactory;
 import org.hibernate.envers.Audited;
@@ -41,6 +43,7 @@ import com.wds.tools.envers.cli.utils.ClassUtils;
 import com.wds.tools.envers.cli.utils.ConnectionUrl;
 import com.wds.tools.envers.cli.utils.Console;
 import com.wds.tools.envers.cli.utils.Consts;
+import com.wds.tools.envers.cli.utils.EnversUtils;
 import com.wds.tools.envers.cli.utils.PropertyUtils;
 import com.wds.tools.envers.cli.utils.Reflections;
 import com.wds.tools.envers.cli.utils.StringUtils;
@@ -54,33 +57,21 @@ public class JdbcExecutor implements Executor {
 	}
 
 	public JdbcExecutor(Runnable command, Properties props) {
-		this.command = command;
+		this.args = new CommandArgs(command);
 		this.props = props;
 	}
 
-	private final Runnable command;
+	private final CommandArgs args;
 	private final Properties props;
-
-	private InstallCommand install;
-
-	private boolean verbose;
 
 	@Override
 	public void install() {
-		this.install = (InstallCommand) command;
-		this.verbose = this.install.verbose;
-		initializeRevisionInfo();
-	}
-
-	private void initializeRevisionInfo() {
-		Configuration cfg = configure2();
+		Configuration cfg = buildConfiguration();
 		SessionFactory sessionFactory = cfg.buildSessionFactory();
-
-		AuditEventListener listener = new AuditEventListener();
-		listener.initialize(cfg);
-
 		List<Object> entities = getEntityData(sessionFactory);
+
 		if (entities != null && entities.size() > 0) {
+			AuditEventListener listener = EnversUtils.getAuditEventListener(sessionFactory);
 			EventSource source = (EventSource) sessionFactory.openSession();
 			Transaction tx = source.beginTransaction();
 			for (Object entity : entities) {
@@ -137,46 +128,53 @@ public class JdbcExecutor implements Executor {
 		return data;
 	}
 
-	private Configuration configure() {
-		ConnectionUrl url = new ConnectionUrl(this.install.url);
+	private Configuration buildConfiguration() {
+		ConnectionUrl url = new ConnectionUrl(this.args.url);
 
 		if (url.isJdbc()) {
-			shouldNotNull(this.install.basepackage, "Base package should not be null : ''--basepackage'' is required");
+			shouldNotNull(this.args.basepackage, "Base package should not be null : ''--basepackage'' is required");
 		}
 
-		List<Class<?>> entities = CPScanner.scanClasses(new ClassFilter().packageName(this.install.basepackage)
+		List<Class<?>> entities = CPScanner.scanClasses(new ClassFilter().packageName(this.args.basepackage)
 				.annotation(Entity.class).joinAnnotationsWithOr().annotation(MappedSuperclass.class));
 
-		if (this.install.revent != null && this.install.revent != "") {
-			Class<?> revent = ClassUtils.forName(this.install.revent);
+		if (this.args.revent != null && this.args.revent != "") {
+			Class<?> revent = ClassUtils.forName(this.args.revent);
 			entities.add(revent);
 		}
 
 		// resolve properties
 		String driver = (String) shouldNotNull(
-				PropertyUtils.getProperty(drivers, url.getDatabaseType(), this.install.driver),
+				PropertyUtils.getProperty(drivers, url.getDatabaseType(), this.args.driver),
 				StringUtils.replace("Cannot find dirver for ''{0}''", url.getDatabaseType()));
 		String dialect = (String) shouldNotNull(
-				PropertyUtils.getProperty(dialects, url.getDatabaseType(), this.install.dialect),
+				PropertyUtils.getProperty(dialects, url.getDatabaseType(), this.args.dialect),
 				StringUtils.replace("Cannot find dialect for ''{0}''", url.getDatabaseType()));
 
-		// hibernate
-		putProperty(this.props, Consts.HIBERNATE_CONNECTION_URL, this.install.url);
-		putProperty(this.props, "hibernate.connection.username", this.install.username);
-		putProperty(this.props, "hibernate.connection.password", this.install.password);
+		// hibernate props
+		putProperty(this.props, Consts.HIBERNATE_CONNECTION_URL, this.args.url);
+		putProperty(this.props, "hibernate.connection.username", this.args.username);
+		putProperty(this.props, "hibernate.connection.password", this.args.password);
 		putProperty(this.props, "hibernate.connection.driver_class", driver);
 		putProperty(this.props, "hibernate.dialect", dialect);
 		putProperty(this.props, "hibernate.hbm2ddl.auto", "update");
-		putProperty(this.props, "hibernate.ejb.naming_strategy", "org.hibernate.cfg.ImprovedNamingStrategy");
 
-		// envers
+		// envers props
 		putProperty(this.props, "org.hibernate.envers.audit_strategy",
 				"org.hibernate.envers.strategy.ValidityAuditStrategy");
-		verbose(this.props);
 		verbose("");
+
 		// create configuration
 		Configuration cfg = new Configuration();
+
+		// properties
+		verbose("Configration properties :");
+		for (String key : props.stringPropertyNames()) {
+			verbose("{0} = {1}", key, props.getProperty(key));
+		}
 		cfg.addProperties(this.props);
+
+		// entities
 		verbose("Audited Entities : ");
 		for (Class<?> entity : entities) {
 			if (entity.isAnnotationPresent(Audited.class)) {
@@ -185,30 +183,55 @@ public class JdbcExecutor implements Executor {
 			cfg.addAnnotatedClass(entity);
 		}
 		verbose("");
-		return cfg;
-	}
 
-	private Configuration configure2() {
-		Configuration cfg = configure();
+		// listeners
 		cfg.setListener("post-insert", new AuditEventListener());
 		cfg.setListener("post-update", new AuditEventListener());
 		cfg.setListener("post-delete", new AuditEventListener());
 		cfg.setListener("pre-collection-update", new AuditEventListener());
 		cfg.setListener("pre-collection-remove", new AuditEventListener());
 		cfg.setListener("post-collection-recreate", new AuditEventListener());
+
+		// naming strategy
+		String namingStrategyClassName = getProperty(this.props, "hibernate.ejb.naming_strategy",
+				"org.hibernate.cfg.ImprovedNamingStrategy");
+		cfg.setNamingStrategy((NamingStrategy) ClassUtils.newInstance(namingStrategyClassName));
+
 		return cfg;
 	}
 
 	private void verbose(String message, Object... args) {
-		if (this.verbose) {
+		if (this.args.verbose) {
 			Console.info(message, args);
 		}
 	}
 
-	private void verbose(Properties props) {
-		verbose("Configration properties :");
-		for (String key : props.stringPropertyNames()) {
-			verbose("{0} = {1}", key, props.getProperty(key));
+	private static class CommandArgs {
+		public boolean verbose;
+		public String dialect;
+		public String driver;
+		public String password;
+		public String username;
+		public String revent;
+		public String basepackage;
+		public String url;
+
+		public CommandArgs(Runnable command) {
+			initialize(command);
+		}
+
+		private void initialize(Runnable command) {
+			if (command instanceof InstallCommand) {
+				InstallCommand install = (InstallCommand) command;
+				this.verbose = install.verbose;
+				this.dialect = install.dialect;
+				this.driver = install.driver;
+				this.password = install.password;
+				this.username = install.username;
+				this.revent = install.revent;
+				this.basepackage = install.basepackage;
+				this.url = install.url;
+			}
 		}
 	}
 }
