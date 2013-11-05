@@ -160,6 +160,12 @@ version=${project.version}
 			<groupId>com.javaetmoi.core</groupId>
 			<artifactId>javaetmoi-hibernate-hydrate</artifactId>
 			<version>1.2</version>
+			<exclusions>
+				<exclusion>
+					<groupId>ch.qos.logback</groupId>
+					<artifactId>logback-classic</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 	</dependencies>
 
