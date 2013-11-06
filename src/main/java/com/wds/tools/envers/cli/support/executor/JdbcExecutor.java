@@ -6,10 +6,10 @@ import static com.wds.tools.envers.cli.utils.ValidateUtils.shouldNotNull;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 import org.hibernate.Criteria;
 import org.hibernate.EntityMode;
@@ -127,7 +127,7 @@ public class JdbcExecutor implements Executor {
 			shouldNotNull(this.args.basepackages, "Base package should not be null : ''--basepackage'' is required");
 		}
 
-		Collection<Class<?>> entities = EntityUtils.findEntities(this.args.basepackages);
+		Set<Class<?>> entities = EntityUtils.findEntities(this.args.basepackages);
 
 		if (this.args.revent != null && this.args.revent != "") {
 			Class<?> revent = ClassUtils.forName(this.args.revent);
