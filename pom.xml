@@ -149,7 +149,7 @@ version=${project.version}
 			<artifactId>hibernate-envers</artifactId>
 			<version>3.6.10.Final</version>
 		</dependency>
-
+		
 		<dependency>
 			<groupId>net.sf.corn</groupId>
 			<artifactId>corn-cps</artifactId>

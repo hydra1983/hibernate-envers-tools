@@ -16,7 +16,7 @@ public class Reflections {
 		return field;
 	}
 
-	public static Object getFieldValue(Object instance, String fieldName) {
+	public static Object getValue(Object instance, String fieldName) {
 		Object value = null;
 		if (instance != null) {
 			Class<?> javaType = instance.getClass();

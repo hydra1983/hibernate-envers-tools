@@ -6,15 +6,10 @@ import static com.wds.tools.envers.cli.utils.ValidateUtils.shouldNotNull;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-
-import javax.persistence.Entity;
-import javax.persistence.MappedSuperclass;
-
-import net.sf.corn.cps.CPScanner;
-import net.sf.corn.cps.ClassFilter;
 
 import org.hibernate.Criteria;
 import org.hibernate.EntityMode;
@@ -26,7 +21,6 @@ import org.hibernate.cfg.NamingStrategy;
 import org.hibernate.envers.AuditReader;
 import org.hibernate.envers.AuditReaderFactory;
 import org.hibernate.envers.Audited;
-import org.hibernate.envers.RevisionType;
 import org.hibernate.envers.event.AuditEventListener;
 import org.hibernate.envers.query.AuditEntity;
 import org.hibernate.envers.query.AuditQuery;
@@ -41,9 +35,10 @@ import com.wds.tools.envers.cli.support.Executor;
 import com.wds.tools.envers.cli.support.command.InstallCommand;
 import com.wds.tools.envers.cli.utils.ClassUtils;
 import com.wds.tools.envers.cli.utils.ConnectionUrl;
-import com.wds.tools.envers.cli.utils.Console;
 import com.wds.tools.envers.cli.utils.Consts;
+import com.wds.tools.envers.cli.utils.EntityUtils;
 import com.wds.tools.envers.cli.utils.EnversUtils;
+import com.wds.tools.envers.cli.utils.Logger;
 import com.wds.tools.envers.cli.utils.PropertyUtils;
 import com.wds.tools.envers.cli.utils.Reflections;
 import com.wds.tools.envers.cli.utils.StringUtils;
@@ -65,8 +60,8 @@ public class JdbcExecutor implements Executor {
 	private final Properties props;
 
 	@Override
-	public void install() {	
-		Configuration cfg = buildConfiguration();
+	public void install() {
+		Configuration cfg = configure();
 		SessionFactory sessionFactory = cfg.buildSessionFactory();
 		List<Object> entities = getEntityData(sessionFactory);
 
@@ -79,11 +74,10 @@ public class JdbcExecutor implements Executor {
 				EntityPersister persister = source.getEntityPersister(null, entity);
 				Object[] state = persister.getPropertyValuesToInsert(entity, null, source);
 				ClassMetadata metadata = sessionFactory.getClassMetadata(persister.getEntityName());
-				Serializable id = (Serializable) Reflections
-						.getFieldValue(entity, metadata.getIdentifierPropertyName());
+				Serializable id = (Serializable) Reflections.getValue(entity, metadata.getIdentifierPropertyName());
 				PostInsertEvent event = new PostInsertEvent(entity, id, state, persister, source);
 				listener.onPostInsert(event);
-				verbose(1, "Auditing entity ''{0}'' with id ''{1}''", entity.getClass().getName(), id);
+				verbose("Auditing entity ''{0}'' with id ''{1}''", entity.getClass().getName(), id);
 			}
 			tx.commit();
 			source.close();
@@ -105,18 +99,17 @@ public class JdbcExecutor implements Executor {
 				List entities = criteria.list();
 				for (Object entity : entities) {
 					String idName = metadata.getIdentifierPropertyName();
-					Serializable id = (Serializable) Reflections.getFieldValue(entity, idName);
+					Serializable id = (Serializable) Reflections.getValue(entity, idName);
 					AuditQuery query = reader.createQuery().forRevisionsOfEntity(javaType, false, true);
 					query.addOrder(AuditEntity.revisionNumber().asc());
-					query.add(AuditEntity.revisionType().eq(RevisionType.ADD));
 					query.add(AuditEntity.id().eq(id));
 					query.setMaxResults(1);
 					@SuppressWarnings("rawtypes")
 					List list = query.getResultList();
-					if (list != null && list.size() == 1) {
-						verbose(1, "Entity ''{0}'' with id ''{1}'' already Audited", javaType.getName(), id);
+					if (list != null && list.size() > 0) {
+						verbose("Entity ''{0}'' with id ''{1}'' already Audited", javaType.getName(), id);
 					} else {
-						verbose(1, "Entity ''{0}'' with id ''{1}'' will be audited", javaType.getName(), id);
+						verbose("Entity ''{0}'' with id ''{1}'' will be audited", javaType.getName(), id);
 						entity = LazyLoadingUtil.deepHydrate(session, entity);
 						data.add(entity);
 					}
@@ -127,15 +120,14 @@ public class JdbcExecutor implements Executor {
 		return data;
 	}
 
-	private Configuration buildConfiguration() {
+	private Configuration configure() {
 		ConnectionUrl url = new ConnectionUrl(this.args.url);
 
 		if (url.isJdbc()) {
-			shouldNotNull(this.args.basepackage, "Base package should not be null : ''--basepackage'' is required");
+			shouldNotNull(this.args.basepackages, "Base package should not be null : ''--basepackage'' is required");
 		}
 
-		List<Class<?>> entities = CPScanner.scanClasses(new ClassFilter().packageName(this.args.basepackage)
-				.annotation(Entity.class).joinAnnotationsWithOr().annotation(MappedSuperclass.class));
+		Collection<Class<?>> entities = EntityUtils.findEntities(this.args.basepackages);
 
 		if (this.args.revent != null && this.args.revent != "") {
 			Class<?> revent = ClassUtils.forName(this.args.revent);
@@ -169,24 +161,24 @@ public class JdbcExecutor implements Executor {
 		verbose("Configration properties :");
 		cfg.addProperties(this.props);
 		for (String key : props.stringPropertyNames()) {
-			verbose(1, "{0} = {1}", key, props.getProperty(key));
-		}		
+			verbose("{0} = {1}", key, props.getProperty(key));
+		}
 
 		// naming strategy
 		String namingStrategyClassName = getProperty(this.props, "hibernate.ejb.naming_strategy",
 				"org.hibernate.cfg.ImprovedNamingStrategy");
 		cfg.setNamingStrategy((NamingStrategy) ClassUtils.newInstance(namingStrategyClassName));
-		
+
 		verbose("Naming Strategy : {0}", namingStrategyClassName);
 
 		// entities
 		verbose("Audited Entities : ");
 		for (Class<?> entity : entities) {
 			if (entity.isAnnotationPresent(Audited.class)) {
-				verbose(1, entity.getName());
+				verbose(entity.getName());
 			}
 			cfg.addAnnotatedClass(entity);
-		}		
+		}
 
 		// listeners
 		cfg.setListener("post-insert", new AuditEventListener());
@@ -201,17 +193,8 @@ public class JdbcExecutor implements Executor {
 
 	private void verbose(String message, Object... args) {
 		if (this.args.verbose) {
-			Console.info(message, args);
+			Logger.info(0, message, args);
 		}
-	}
-
-	private void verbose(int level, String message, Object... args) {
-		String pad = "    ";
-		String totalPad = "";
-		for (int i = 0; i < level; i++) {
-			totalPad += pad;
-		}
-		verbose(totalPad + message, args);
 	}
 
 	private static class CommandArgs {
@@ -221,7 +204,7 @@ public class JdbcExecutor implements Executor {
 		public String password;
 		public String username;
 		public String revent;
-		public String basepackage;
+		public String basepackages;
 		public String url;
 
 		public CommandArgs(Runnable command) {
@@ -237,8 +220,20 @@ public class JdbcExecutor implements Executor {
 				this.password = install.password;
 				this.username = install.username;
 				this.revent = install.revent;
-				this.basepackage = install.basepackage;
+				this.basepackages = install.basepackages;
 				this.url = install.url;
+			}
+
+			if (verbose) {
+				Logger.info("Command args : ");
+				Logger.info(1, "verbose : ''{0}''", this.verbose);
+				Logger.info(1, "dialect : ''{0}''", this.dialect);
+				Logger.info(1, "driver : ''{0}''", this.driver);
+				Logger.info(1, "password : ''{0}''", this.password);
+				Logger.info(1, "username : ''{0}''", this.username);
+				Logger.info(1, "revent : ''{0}''", this.revent);
+				Logger.info(1, "basepackages : ''{0}''", this.basepackages);
+				Logger.info(1, "url : ''{0}''", this.url);
 			}
 		}
 	}

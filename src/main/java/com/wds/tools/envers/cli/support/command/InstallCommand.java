@@ -20,8 +20,8 @@ public class InstallCommand extends AbstractCommand {
 	@Option(name = "--dialect", description = "Dialect class of target database")
 	public String dialect;
 
-	@Option(name = "--basepackage", description = "Base package to scan entities")
-	public String basepackage;
+	@Option(name = "--basepackages", description = "Packages in regexp pattern to scan entities")
+	public String basepackages;
 
 	@Option(name = "--revent", description = "Revision entity class")
 	public String revent;
