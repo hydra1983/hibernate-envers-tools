@@ -2,28 +2,29 @@ package com.wds.tools.envers.cli.support.executor;
 
 import static com.wds.tools.envers.cli.utils.PropertyUtils.getProperty;
 import static com.wds.tools.envers.cli.utils.PropertyUtils.putProperty;
+import static com.wds.tools.envers.cli.utils.StringUtils.replace;
+import static com.wds.tools.envers.cli.utils.StringUtils.trimLeft;
 import static com.wds.tools.envers.cli.utils.ValidateUtils.shouldNotNull;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import org.hibernate.Criteria;
 import org.hibernate.EntityMode;
+import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 import org.hibernate.cfg.Configuration;
 import org.hibernate.cfg.NamingStrategy;
-import org.hibernate.envers.AuditReader;
-import org.hibernate.envers.AuditReaderFactory;
 import org.hibernate.envers.Audited;
+import org.hibernate.envers.configuration.AuditConfiguration;
+import org.hibernate.envers.configuration.AuditEntitiesConfiguration;
 import org.hibernate.envers.event.AuditEventListener;
-import org.hibernate.envers.query.AuditEntity;
-import org.hibernate.envers.query.AuditQuery;
 import org.hibernate.event.EventSource;
 import org.hibernate.event.PostInsertEvent;
 import org.hibernate.metadata.ClassMetadata;
@@ -41,7 +42,6 @@ import com.wds.tools.envers.cli.utils.EnversUtils;
 import com.wds.tools.envers.cli.utils.Logger;
 import com.wds.tools.envers.cli.utils.PropertyUtils;
 import com.wds.tools.envers.cli.utils.Reflections;
-import com.wds.tools.envers.cli.utils.StringUtils;
 
 public class JdbcExecutor implements Executor {
 	private static Properties drivers;
@@ -62,62 +62,13 @@ public class JdbcExecutor implements Executor {
 	@Override
 	public void install() {
 		Configuration cfg = configure();
+
 		SessionFactory sessionFactory = cfg.buildSessionFactory();
-		List<Object> entities = getEntityData(sessionFactory);
+		AuditConfiguration verCfg = AuditConfiguration.getFor(cfg);
 
-		if (entities != null && entities.size() > 0) {
-			verbose("Auditing entities...");
-			AuditEventListener listener = EnversUtils.getAuditEventListener(sessionFactory);
-			EventSource source = (EventSource) sessionFactory.openSession();
-			Transaction tx = source.beginTransaction();
-			for (Object entity : entities) {
-				EntityPersister persister = source.getEntityPersister(null, entity);
-				Object[] state = persister.getPropertyValuesToInsert(entity, null, source);
-				ClassMetadata metadata = sessionFactory.getClassMetadata(persister.getEntityName());
-				Serializable id = (Serializable) Reflections.getValue(entity, metadata.getIdentifierPropertyName());
-				PostInsertEvent event = new PostInsertEvent(entity, id, state, persister, source);
-				listener.onPostInsert(event);
-				verbose("Auditing entity ''{0}'' with id ''{1}''", entity.getClass().getName(), id);
-			}
-			tx.commit();
-			source.close();
-		}
-	}
+		List<Object> entities = getEntityData(verCfg, sessionFactory);
 
-	private List<Object> getEntityData(SessionFactory sessionFactory) {
-		List<Object> data = new ArrayList<Object>();
-		Session session = sessionFactory.openSession();
-		AuditReader reader = AuditReaderFactory.get(session);
-		Map<String, ClassMetadata> allMetadata = sessionFactory.getAllClassMetadata();
-		verbose("Retrieving data...");
-		for (String key : allMetadata.keySet()) {
-			ClassMetadata metadata = allMetadata.get(key);
-			Class<?> javaType = metadata.getMappedClass(EntityMode.POJO);
-			if (javaType.isAnnotationPresent(Audited.class)) {
-				Criteria criteria = session.createCriteria(metadata.getEntityName());
-				@SuppressWarnings("rawtypes")
-				List entities = criteria.list();
-				for (Object entity : entities) {
-					String idName = metadata.getIdentifierPropertyName();
-					Serializable id = (Serializable) Reflections.getValue(entity, idName);
-					AuditQuery query = reader.createQuery().forRevisionsOfEntity(javaType, false, true);
-					query.addOrder(AuditEntity.revisionNumber().asc());
-					query.add(AuditEntity.id().eq(id));
-					query.setMaxResults(1);
-					@SuppressWarnings("rawtypes")
-					List list = query.getResultList();
-					if (list != null && list.size() > 0) {
-						verbose("Entity ''{0}'' with id ''{1}'' already Audited", javaType.getName(), id);
-					} else {
-						verbose("Entity ''{0}'' with id ''{1}'' will be audited", javaType.getName(), id);
-						entity = LazyLoadingUtil.deepHydrate(session, entity);
-						data.add(entity);
-					}
-				}
-			}
-		}
-		session.close();
-		return data;
+		auditEntities(entities, sessionFactory);
 	}
 
 	private Configuration configure() {
@@ -137,10 +88,10 @@ public class JdbcExecutor implements Executor {
 		// resolve properties
 		String driver = (String) shouldNotNull(
 				PropertyUtils.getProperty(drivers, url.getDatabaseType(), this.args.driver),
-				StringUtils.replace("Cannot find dirver for ''{0}''", url.getDatabaseType()));
+				replace("Cannot find dirver for ''{0}''", url.getDatabaseType()));
 		String dialect = (String) shouldNotNull(
 				PropertyUtils.getProperty(dialects, url.getDatabaseType(), this.args.dialect),
-				StringUtils.replace("Cannot find dialect for ''{0}''", url.getDatabaseType()));
+				replace("Cannot find dialect for ''{0}''", url.getDatabaseType()));
 
 		// hibernate props
 		putProperty(this.props, Consts.HIBERNATE_CONNECTION_URL, this.args.url);
@@ -172,7 +123,7 @@ public class JdbcExecutor implements Executor {
 		verbose("Naming Strategy : {0}", namingStrategyClassName);
 
 		// entities
-		verbose("Audited Entities : ");
+		verbose("Target Entities : ");
 		for (Class<?> entity : entities) {
 			if (entity.isAnnotationPresent(Audited.class)) {
 				verbose(entity.getName());
@@ -189,6 +140,87 @@ public class JdbcExecutor implements Executor {
 		cfg.setListener("post-collection-recreate", new AuditEventListener());
 
 		return cfg;
+	}
+
+	private List<Object> getEntityData(AuditConfiguration verCfg, SessionFactory sessionFactory) {
+		List<Object> data = new ArrayList<Object>();
+
+		Session session = sessionFactory.openSession();
+		Map<String, ClassMetadata> allMetadata = sessionFactory.getAllClassMetadata();
+		verbose("Retrieving data...");
+		for (String key : allMetadata.keySet()) {
+			ClassMetadata metadata = allMetadata.get(key);
+			Class<?> javaType = metadata.getMappedClass(EntityMode.POJO);
+			if (javaType.isAnnotationPresent(Audited.class)) {
+				String queryString = createQueryString(verCfg, metadata);
+				Query query = session.createQuery(queryString);
+				@SuppressWarnings("unchecked")
+				List<Object> list = (List<Object>) query.list();
+				if (list != null && list.size() > 0) {
+					for (Object item : list) {
+						String idName = metadata.getIdentifierPropertyName();
+						Serializable id = (Serializable) Reflections.getValue(item, idName);
+						verbose("Entity ''{0}'' with id ''{1}'' will be audited", javaType.getName(), id);
+						item = LazyLoadingUtil.deepHydrate(session, item);
+						data.add(item);
+					}
+				}
+			}
+		}
+		session.close();
+
+		return data;
+	}
+
+	private String createQueryString(AuditConfiguration verCfg, ClassMetadata metadata) {
+		AuditEntitiesConfiguration audEntCfg = verCfg.getAuditEntCfg();
+		String ent = metadata.getEntityName();
+		String entId = metadata.getIdentifierPropertyName();
+
+		String audEnt = audEntCfg.getAuditEntityName(ent);
+		String audEntId = audEntCfg.getOriginalIdPropName() + "." + entId;
+		String audRevNum = audEntCfg.getRevisionNumberPath();
+		String audRevType = audEntCfg.getRevisionTypePropName();
+		String audRevEnd = audEntCfg.getRevisionEndFieldName();
+
+		Map<String, Object> props = new HashMap<String, Object>();
+		props.put("ent", ent);
+		props.put("entId", entId);
+		props.put("audEnt", audEnt);
+		props.put("audEntId", audEntId);
+		props.put("audRevNum", audRevNum);
+		props.put("audRevType", audRevType);
+		props.put("audRevEnd", audRevEnd);
+
+		StringBuilder builder = new StringBuilder();
+		builder.append(trimLeft("SELECT e FROM ${ent} e "));
+		builder.append(trimLeft("	WHERE e.${entId} NOT IN ( "));
+		builder.append(trimLeft("		SELECT er.${audEntId} FROM ${audEnt} er GROUP BY er.${audEntId}"));
+		builder.append(trimLeft("	)"));
+		return replace(builder.toString(), props);
+	}
+
+	private void auditEntities(List<Object> entities, SessionFactory sessionFactory) {
+		if (entities == null || entities.size() == 0) {
+			verbose("No data to audit...");
+			return;
+		}
+
+		verbose("Auditing entities...");
+		AuditEventListener listener = EnversUtils.getAuditEventListener(sessionFactory);
+		EventSource source = (EventSource) sessionFactory.openSession();
+		Transaction tx = source.beginTransaction();
+		for (Object entity : entities) {
+			EntityPersister persister = source.getEntityPersister(null, entity);
+			Object[] state = persister.getPropertyValuesToInsert(entity, null, source);
+			ClassMetadata metadata = sessionFactory.getClassMetadata(persister.getEntityName());
+			Serializable id = (Serializable) Reflections.getValue(entity, metadata.getIdentifierPropertyName());
+			PostInsertEvent event = new PostInsertEvent(entity, id, state, persister, source);
+			listener.onPostInsert(event);
+			verbose("Entity ''{0}'' with id ''{1}'' is audited", entity.getClass().getName(), id);
+		}
+		tx.commit();
+		source.close();
 	}
 
 	private void verbose(String message, Object... args) {
