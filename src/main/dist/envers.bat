@@ -4,7 +4,7 @@ if "%OS%" == "Windows_NT" setlocal
 setlocal enabledelayedexpansion
 
 rem %~dp0 is expanded pathname of the current script under NT
-set ENVERS_TOOLS_HOME="%~dp0"
+set ENVERS_TOOLS_HOME=%~dp0
 
 set CP=.
 set CP=!CP!;%ENVERS_TOOLS_HOME%\patches\*
