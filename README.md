@@ -25,14 +25,15 @@ NAME
         Hibenrate Envers
 
 SYNOPSIS
-        envers [(-v | --verbose)] install [--basepackage <basepackage>]
+        envers [(-v | --verbose)] install [--basepackages <basepackages>]
                 [-D <parameters>...] [--dialect <dialect>] [--driver <driver>]
                 [--password <password>] [--revent <revent>] --url <url>
                 [--username <username>]
 
 OPTIONS
-        --basepackage <basepackage>
-            Base package to scan entities
+        --basepackages <basepackages>
+            Package names which will be converted to regexp pattern to scan
+            entities
 
         -D <parameters>
             System parameters
@@ -68,5 +69,5 @@ envers  -v install ^
         --url=jdbc:h2:tmp/example ^
         --username=sa ^
         --password= ^
-        --basepackage=com.wds.demo.sync.domain
+        --basepackages=com.wds.demo.*.domain
 ```
